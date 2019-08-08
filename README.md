@@ -14,5 +14,7 @@ The script include:
 6. Extra reminders of script: 
    example: how to remove specific values from a NETCDF file and making boxplots. 
    
-   
-##Fast and Frugal Tree in R
+ ## Climatology
+ 
+ ## Fast and Frugal Tree in R
+ 
