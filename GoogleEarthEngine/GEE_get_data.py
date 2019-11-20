@@ -15,8 +15,6 @@ for country_abb, admin_file in country_dict.items():
 
     # get country admin level shapefile
     country = ee.FeatureCollection(admin_file)
-    # country abbreviation:
-    country_abb = "KE"  # UG #KE #UG
     # year range
     year_start, year_end = 1981, 2019
 
