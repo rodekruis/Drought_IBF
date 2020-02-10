@@ -1,0 +1,33 @@
+Updates: Misha Klein + Behrouz Eslami
+-------------------------------
+
+07-02-2020
+---------
+Jacopo took original data and corrected the dates based on the satellite data itself. This massively increased correlations (NDVI lower for drought events, SPEI lower for drought events, etc.), but we determined this is mainly because of the way he performed the correction:
+ " Shift the date to a local minim in the median of a couple correlated satellite measurements"
+
+
+We checked by starting with original dataset and retracing the steps:
+* Use Z-norm on data: no clear separation between drought/no droughts 
+* Only keep satellite data ±1 year surrounding recorded events: Correlation increases, but not to as much as before
+
+
+Hence, we clearly must take into account our finite resolution in knowing the date of the event.
+To do such, we use a sliding window over the time trace and assign one value to each window. In this manner, we test the hypotheses: 
+" A drought means that the NDVI/SPEI (or something else) was low for any of the surrounding months"
+
+For this we also use the same window and record: 
+" Move from having an event (drought recorded) label for every month, to number of drought events within the window”
+
+code allows for
+* adjustable window sizes. 
+* can compute, min, max, median (in notebook, now made a choice of which indicators to calc min/max for) 
+* For prediction, we can also combine quantities afterwards
+
+Result
+——————
+For a window of 3 months, we start to see some separation between drought/non-droughts.
+That is, the median shifts. Unfortunately, the spread is so large that it is still uncertain if you can call this statistically relevant. 
+
+ 
+
