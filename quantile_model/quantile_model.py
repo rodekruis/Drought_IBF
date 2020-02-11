@@ -116,7 +116,8 @@ def quantile_model(threshold_quantile=0.1):
                                                         'indicator': var,
                                                         'POD': metrics['POD'],
                                                         'FAR': metrics['FAR'],
-                                                        'CSI': metrics['CSI']}, ignore_index=True)
+                                                        'CSI': metrics['CSI'],
+                                                        'n_events': TP + FN}, ignore_index=True)
                     except:
                         continue
     df_results_per_district = df_results_per_district.set_index(['country', 'district', 'indicator'])
@@ -131,6 +132,7 @@ def quantile_model(threshold_quantile=0.1):
     df_results_per_country['POD'] = TP / (TP + FN)
     df_results_per_country['FAR'] = FP / (TP + FP)
     df_results_per_country['CSI'] = TP / (TP + FP + FN)
+    df_results_per_country['n_events'] = TP + FN
 
     # print results per country and save
     print(df_results_per_country.head())
