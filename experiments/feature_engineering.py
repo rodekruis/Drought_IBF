@@ -177,10 +177,175 @@ def sliding_window(DroughtData, window_size):
 
 
 
+def sample_no_replacement_window(DroughtData, window_size):
+    '''
+    Aggregrate data over a given time period into a single-valued feature.
+
+    first version: Choice of what metrics is now hard coded. Could make variable if needed
+
+    :param DroughtData:
+    :param window_size:
+    :return:
+    '''
+    # --- in case this is not the first operation ---
+    DroughtData.reset_index(inplace=True,drop=True)
+
+
+    # --- all indicators ---
+    features = list(DroughtData.columns.drop(['Country', 'District', 'date', 'day', 'month', 'year',
+                                              'drought_reported', 'drought_desinventar', 'drought_news_article']))
+
+
+    # --- check max value in these ----
+    features_min_val = ['NDVI', 'EVI', 'rainfall',
+                        'precipitation_per_hour_v1',
+                        'precipitation_per_hour_v2',
+                        'SoilMoisture00_10cm',
+                        'SoilMoisture10_40cm',
+                        'SoilMoisture40_100cm',
+                        'SoilMoisture100_200cm',
+                        'SPEI_1month',
+                        'SPEI_2month',
+                        'SPEI_3month',
+                        'SPEI_4month',
+                        'SPEI_5month',
+                        'SPEI_6month',
+                        'SPEI_7month',
+                        'SPEI_8month',
+                        'SPEI_9month',
+                        'SPEI_10month',
+                        'SPEI_11month',
+                        'SPEI_12month',
+                        'wind_speed']
+
+    # --- check min values in these ----
+    features_max_val = ['evapotranspiration',
+                        'surface_temperature_daytime',
+                        'surface_temperature_nighttime',
+                        'air_temperature',
+                        'SoilTemperature00_10cm',
+                        'SoilTemperature10_40cm',
+                        'SoilTemperature40_100cm',
+                        'SoilTemperature100_200cm',
+                        'wind_speed']
+
+
+    tot_nmbr_districts = len(DroughtData['District'].unique())
+    # --- perform the analysis ----
+    sampling_window_data = pd.DataFrame()
+    for i,district in enumerate(DroughtData['District'].unique()):
+
+        print('district :', district, ' number ', i+1, 'out of ', tot_nmbr_districts, end='\r')
+
+        group = DroughtData[DroughtData['District'] == district]
+        group.reset_index(inplace=True)
+        event_locations = list(group[group['drought_reported']].index)
+        windows, _ = apply_random_window(group, event_locations, window_size)
+
+        district_data = pd.DataFrame()
+        for w in windows:
+            # --- slice dataframe into this window ----
+            window_data = group.loc[w]
+            # --- get maximum of indicators we think should positively correlate with droughts ----
+            metric_max = apply_metric(window_data, columns_to_calc=features_max_val, method='max')
+
+            # --- get minimum of indicators we think should negatively correlate with droughts ----
+            metric_min = apply_metric(window_data, columns_to_calc=features_min_val, method='min')
+
+            # --- get median values for all indicators per window -----
+            metric_med = apply_metric(window_data, columns_to_calc=features, method='med')
+
+            # --- merge together ----
+            metrics_window = pd.concat([metric_max, metric_min, metric_med])
+
+            # --- drought reported within this window? ----
+            #### COULD ADD THE COLUMNS INDICATING IF IT IS DESINVENTAR OR NEWS ARTICLES ####
+            metrics_window['drought_count'] = int(window_data['drought_reported'].sum())
+
+            # --- add together ----
+            district_data = pd.concat([district_data, metrics_window.to_frame().transpose()], sort=True)
+
+        # --- add the information of the district back into dataframe ----
+        district_data.reset_index(inplace=True, drop=True)
+        district_data['District'] = group.reset_index()['District']
+        district_data['Country'] = group.reset_index()['Country']
+        district_data['Date_start_window'] = group.reset_index()['date']
+
+        # --- merge all data (all districts) together in combined dataset -----
+        sampling_window_data = pd.concat([sampling_window_data, district_data], sort=True)
+
+
+    # ---  make boolean column for drought events ----
+    sampling_window_data['drought_reported'] = sampling_window_data['drought_count'].astype(bool)
+
+
+    return sampling_window_data
+
+
+
+
 '''
 utility functions 
 
 '''
+
+
+def get_window(data, loc,window_size):
+    start_index = max(min(data.index), min(data.index) + int(loc - np.floor(0.5 * (window_size - 1))))
+    stop_index = min(max(data.index), min(data.index) + int(loc + np.ceil(0.5 * (window_size - 1))))
+    window_index = list(range(start_index, stop_index + 1))
+    return window_index
+
+
+def windows_available(pool, chosen, window_size):
+    # --- list the points not sampled yet----
+    remaining = [x for x in pool if x not in chosen]
+
+    # --- check if a window of desired size can still be centered around remaining points ---
+    available = []
+    for loc in remaining:
+        start_index = int(loc - np.floor(0.5 * (window_size - 1)))
+        stop_index = int(loc + np.floor(0.5 * (window_size - 1)))
+
+        if (start_index in remaining) and (stop_index in remaining):
+            available.append(loc)
+
+    return available, remaining
+
+
+def apply_random_window(data, event_locations, window_size):
+    '''
+    input the data per district.
+    output a set of windows
+    '''
+    # ---- initialize ---
+    available_points = list(data.index)
+    chosen_points = []
+    windows = []
+
+    # --- first get the windows belonging to the events ----
+    for loc in event_locations:
+        new_window = get_window(data, loc,window_size)
+        windows.append(new_window)
+        for i in new_window:
+            chosen_points.append(i)
+
+
+    while len(available_points) > 0:
+        new_loc = np.random.choice(available_points, replace=False)
+        new_window = get_window(data, new_loc,window_size)
+        windows.append(new_window)
+        for i in new_window:
+            chosen_points.append(i)
+
+        available_points, remaining = windows_available(pool=list(data.index), chosen=chosen_points,
+                                                        window_size=window_size)
+
+    return windows, remaining
+
+
+
+
 
 def rows_to_keep(data, event_index, district, keep_years=1):
     '''
