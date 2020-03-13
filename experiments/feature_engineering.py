@@ -4,8 +4,6 @@ This file contains a couple of functions to post-process the satellite data (GEE
 
 
 '''
-
-
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import StandardScaler
@@ -282,7 +280,32 @@ def sample_no_replacement_window(DroughtData, window_size):
     return sampling_window_data
 
 
+def lagged_features(DroughtData, features_to_lag, time_lag):
+    # --- if this is not first operation called from module ---
+    DroughtData.reset_index(inplace=True, drop=True)
 
+    lagged_data = pd.DataFrame()
+    # --- group by district ---
+    for district in DroughtData['District'].unique():
+        group = DroughtData[DroughtData['District'] == district]
+
+        # --- shift selected features downwards (periods argument positive) ---
+        shifted_data_district = DroughtData[features_to_lag].shift(periods=time_lag)
+
+        # --- rename the collumns of these lagged features and merge with non-lagged features ----
+        change_names = {}
+        for name in features_to_lag:
+            new_name = name + '_' + str(time_lag) + 'month'
+            group[new_name] = shifted_data_district[name]
+
+        # --- drop rows with NaN (cannot use rows for which we do not have lagged features)---
+        district_data = group.dropna()
+
+        # --- merge with other districts -----
+        lagged_data = pd.concat([lagged_data, district_data], sort=True)
+        lagged_data.reset_index(inplace=True, drop=True)
+
+    return lagged_data
 
 '''
 utility functions 
