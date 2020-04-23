@@ -2,6 +2,7 @@ import matplotlib.pylab as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
+from xgboost import XGBClassifier
 import sklearn.metrics as sklm
 import sklearn.model_selection as ms
 from sklearn.preprocessing import StandardScaler
@@ -16,7 +17,7 @@ def prepare_Uganda_data(phath='./datasets/',
                         filename='Droughts_satelite_and_events.csv',
                         output_filename='Uganda_seasonal_normalized.csv',
                         save=False):
-
+    
     full_data = pd.read_csv(phath + filename, index_col=False)
     Uganda_data = full_data[full_data.Country == 'Uganda'].copy()
 
@@ -160,6 +161,96 @@ def predict_Logreg_model(model, X, y, C, confusion_matrix=True):
 
     return coefs, predictions, pr, roc, auc
 
+
+def fit_threshold_model(data, feature, label_name, Plot=True):
+    reduced_data = reduce_data(data, label_name)
+
+    balanced_data = balance_data(reduced_data, label_name, undersampling_seed=10)
+
+    median_val = balanced_data[[feature, label_name]].groupby(label_name).median()
+    median_diff = median_val.loc[True] - median_val.loc[False]
+    threshold_up = (median_diff > 0).values[0]
+
+    scores = balanced_data[feature]
+
+    labels = balanced_data[label_name]
+
+    thresholds = np.linspace(scores.min(), scores.max(), 1000)
+
+    thresholds = thresholds[1:-1]
+
+    All_f = []
+
+    for threshold in thresholds:
+        if threshold_up:
+            pred = scores >= threshold
+        else:
+            pred = scores < threshold
+        f = sklm.f1_score(labels, pred, labels=[True, False], average='macro')
+        All_f.append(f)
+
+    best_threshold = thresholds[np.argmax(All_f)]
+
+    if Plot:
+        plt.plot(thresholds, All_f, zorder=1)
+        plt.axvline(best_threshold, ls='--', color='k', zorder=0)
+        plt.xlabel('Thresholds')
+        plt.ylabel('Average F1-score')
+
+    if threshold_up:
+        pred = scores >= best_threshold
+    else:
+        pred = scores < best_threshold
+
+    return labels, pred, np.max(All_f), best_threshold
+
+def fit_xgb_model(data, selected_features, label_name, undersampling_seed=10, train_frac=0.8, test_frac=0.15,
+                  scoring='f1_macro', verbose=True):
+    reduced_data = reduce_data(data, label_name)
+
+    balanced_data = balance_data(reduced_data, label_name, undersampling_seed)
+
+    X, y, X_train, y_train, X_val, y_val, X_test, y_test, train_ind, val_ind, test_ind = make_temporal_split(
+        balanced_data,
+        selected_features,
+        label_name,
+        train_frac,
+        test_frac)
+
+    opt_model = XGBClassifier()
+
+    cv = ((np.array(train_ind), np.array(val_ind)),)
+
+    # Optimizing 'max_depth' and 'min_child_weight'
+    param_grid = {'max_depth': range(1, 25, 1),
+                  'min_child_weight': [2, 4, 6, 8, 10, 20, 30, 40, 50]}
+
+    opt_model = do_gridsearch(X, y, opt_model, param_grid, cv, scoring, verbose)
+
+    # Optimizing gamma
+    param_grid = {'gamma': [i / 100.0 for i in range(0, 100)]}
+
+    opt_model = do_gridsearch(X, y, opt_model, param_grid, cv, scoring, verbose)
+
+    # Optimizing subsample and colsample_bytree
+    param_grid = {'subsample': [i / 10.0 for i in range(6, 11)],
+                  'colsample_bytree': [i / 10.0 for i in range(6, 11)]}
+
+    opt_model = do_gridsearch(X, y, opt_model, param_grid, cv, scoring, verbose)
+
+    # Optimizing reg_alpha
+    param_grid = {'reg_alpha': [1e-5, 1e-2, 0.1, 1, 100]}
+
+    opt_model = do_gridsearch(X, y, opt_model, param_grid, cv, scoring, verbose)
+
+    opt_model.fit(X_train, y_train)
+
+    y_pred_val = opt_model.predict(X_val)
+
+    y_pred_test = opt_model.predict(X_test)
+
+    return opt_model, X, y, X_train, y_train, X_val, y_val, X_test, y_test, y_pred_val, y_pred_test
+
 def print_metrics(labels, scores):
     metrics = sklm.precision_recall_fscore_support(labels, scores, labels=[True,False])
     conf = sklm.confusion_matrix(labels, scores, labels=[True,False])
@@ -176,6 +267,16 @@ def print_metrics(labels, scores):
     print('Precision  %6.2f' % metrics[0][0] + '        %6.2f' % metrics[0][1])
     print('Recall     %6.2f' % metrics[1][0] + '        %6.2f' % metrics[1][1])
     print('F-score    %6.2f' % metrics[2][0] + '        %6.2f' % metrics[2][1])
+
+def get_feature_importances(model,colnames,n):
+    feature_importances = pd.DataFrame()
+    feature_importances['features'] = colnames
+    feature_importances['importance'] = model.feature_importances_
+    feature_importances.sort_values(by='importance',ascending=False, inplace=True)
+    feature_importances.reset_index(drop=True,inplace=True)
+    feature_importances.set_index('features').iloc[0:n].plot.barh(figsize=(8,3))
+    #plt.xticks(rotation='vertical')
+    return feature_importances.head(n)
 
 def plot_dist(data,target,drought_var):
     plt.figure()
@@ -227,6 +328,66 @@ def reduce_data(data, label_name):
     reduced_data.reset_index(drop=True, inplace=True)
 
     return reduced_data
+
+
+def balance_data(data, label_name, undersampling_seed=10):
+    droughts_number = data[label_name].sum()
+
+    negative_data = data[data[label_name] == False].copy()
+    positive_data = data[data[label_name] == True].copy()
+    balanced_data = pd.concat([negative_data.sample(n=droughts_number, replace=False,
+                                                    random_state=undersampling_seed, axis=0), positive_data])
+    balanced_data.sort_values('year', inplace=True)
+    balanced_data.reset_index(drop=True, inplace=True)
+
+    return balanced_data
+
+
+def make_temporal_split(data, selected_features, label_name, train_frac=0.8, test_frac=0.15):
+    data.sort_values('year', inplace=True)
+    data.reset_index(drop=True, inplace=True)
+
+    L = len(data)
+    p1 = 1 - test_frac
+    p2 = train_frac
+
+    train_val_ind = list(range(int(p1 * L)))
+    test_ind = list(range(np.max(train_val_ind) + 1, L))
+    L2 = len(train_val_ind)
+    train_ind = list(range(int(p2 * L2)))
+    val_ind = list(range(np.max(train_ind) + 1, L2))
+
+    X = data[selected_features]
+    y = data[label_name]
+
+    X_train = data[selected_features].loc[train_ind]
+    y_train = data[label_name].loc[train_ind]
+
+    X_val = data[selected_features].loc[val_ind]
+    y_val = data[label_name].loc[val_ind]
+
+    X_test = data[selected_features].loc[test_ind]
+    y_test = data[label_name].loc[test_ind]
+
+    return X, y, X_train, y_train, X_val, y_val, X_test, y_test, train_ind, val_ind, test_ind
+
+
+def do_gridsearch(X, y, opt_model, param_grid, cv, scoring, verbose=True):
+    GS = ms.GridSearchCV(estimator=opt_model, param_grid=param_grid,
+                         cv=cv,
+                         scoring=scoring,
+                         return_train_score=True, n_jobs=4)
+    GS.fit(X, y);
+
+    for key in param_grid.keys():
+        exec ("opt_model." + key + "= GS.best_params_[key]")
+
+    if verbose:
+        print(GS.best_params_)
+        print(scoring + ' = ', GS.best_score_)
+
+    return opt_model
+
 
 def weighted_fscore(y, y_pred):
     n_pos = len(y[y == True])
