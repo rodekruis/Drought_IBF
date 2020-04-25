@@ -6,6 +6,10 @@ import sklearn.metrics as sklm
 import sklearn.model_selection as ms
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
+from datetime import date
+import geopandas as gpd
+import geoplot
+import matplotlib.colors as colors
 
 '''
 Main Functions
@@ -109,8 +113,7 @@ def fit_Logreg_model(data, selected_features, label_name, C_array,
                          cv=cv,
                          scoring=scoring,
                          return_train_score=False,
-                         n_jobs=4,
-                         iid=True)
+                         n_jobs=4)
     GS.fit(X, y);
 
     best_param = GS.best_params_['C']
@@ -193,6 +196,66 @@ def plot_dist(data,target,drought_var):
     plt.legend(loc="best")
     return
 
+
+def visualize_droughts_uganda(data, model, year, season, selected_features,
+                              label_name, path_to_shapefile='../'):
+    drought_count = data[['year', 'Season', label_name]].groupby(['year', 'Season']).sum().rename(
+        columns={label_name: 'drought_count'}).reset_index()
+    drought_count['date'] = drought_count.apply(lambda x: date(x.year,
+                                                               int(x.Season.split('_')[1]), 1),
+                                                axis=1)
+    drought_count[['date', 'drought_count']].plot(x='date', marker='o',
+                                                  color='darkorange',
+                                                  figsize=(5, 1.2),
+                                                  legend=False, )
+    ax = plt.gca()
+    date_1 = date(year, int(season.split('_')[0]), 1)
+    date_2 = date(year, int(season.split('_')[1]), 1)
+    ax.axvspan(date_1, date_2, alpha=0.5, color='grey')
+    plt.ylabel('drought count')
+    plt.xlabel('')
+    plt.ylim([-0.5, 20])
+    plt.yticks(range(0, 20, 5));
+    if season == '6_7':
+        title = 'June-July ' + str(year)
+    if season == '11_12':
+        title = 'November-December ' + str(year)
+    plt.title(title);
+
+    gdf_country = gpd.read_file(get_country_shapefile(path=path_to_shapefile,
+                                                      country='Uganda',
+                                                      admin_level=1), crs='')
+
+    gdf_country.rename(columns={'ADM1_EN': 'District'}, inplace=True)
+    gdf_country_points = gdf_country.copy()
+    gdf_country_points['geometry'] = gdf_country_points.centroid
+
+    part_data = data[(data.year == year) & (data.Season == season)].copy()
+    part_data['score'] = (part_data[selected_features].values.dot(model.coef_.T)).ravel() + model.intercept_
+
+    temp_1 = gdf_country[['District', 'geometry']].merge(part_data[['District',
+                                                                    'score']],
+                                                         on='District')
+    temp_2 = gdf_country_points[['District', 'geometry']].merge(part_data[['District',
+                                                                           label_name]],
+                                                                on='District')
+    temp_2 = temp_2[temp_2[label_name]]
+
+    norm = colors.Normalize(vmin=-0.6, vmax=0.6)
+
+    if not temp_2.empty:
+        temp_2.plot(marker='*', color='white', markersize=200,
+                    edgecolor="black", figsize=(6, 6))
+        ax = plt.gca()
+        geoplot.choropleth(temp_1, hue=temp_1['score'],
+                           cmap='jet', norm=norm, legend=True, ax=ax, zorder=0);
+    else:
+        geoplot.choropleth(temp_1, hue=temp_1['score'],
+                           cmap='jet', norm=norm, legend=True, zorder=0,
+                           figsize=(6, 6));
+
+    return
+
 '''
 Helper Functions 
 '''
@@ -246,3 +309,12 @@ def positive_fscore(y, y_pred):
     f_pos = sklm.f1_score(y, y_pred, pos_label=True, average='binary')
 
     return f_pos
+
+def get_country_shapefile(path='../', country='Uganda', admin_level=1):
+    """
+    get shapefile of given country
+    """
+    country_shapefile = {
+            'Uganda': 'uga_admbnda_adm'+str(admin_level)+'_UBOS_v2.shp'
+            }
+    return str(path+'shapefiles/'+country+'/'+country_shapefile[country])
