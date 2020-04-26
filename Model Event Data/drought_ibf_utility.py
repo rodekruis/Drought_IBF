@@ -15,21 +15,20 @@ import matplotlib.colors as colors
 Main Functions
 '''
 
-
 def prepare_Uganda_data(phath='./datasets/',
                         filename='Droughts_satelite_and_events.csv',
                         output_filename='Uganda_seasonal_normalized.csv',
-                        save=False):
-
+                        save=False,
+                        first_harvest=[6, 7],
+                        second_harvest=[11, 12],
+                        first_planting=[3, 4, 5],
+                        second_planting=[8, 9, 10],
+                        label_col='drought_reported'):
     full_data = pd.read_csv(phath + filename, index_col=False)
     Uganda_data = full_data[full_data.Country == 'Uganda'].copy()
 
-    first_harvest = [6, 7]
-    second_harvest = [11, 12]
-    first_planting = [3, 4, 5]
-    second_planting = [8, 9, 10]
-    second_id = '_'.join(str(x) for x in second_harvest)
     first_id = '_'.join(str(x) for x in first_harvest)
+    second_id = '_'.join(str(x) for x in second_harvest)
 
     label_list = ['drought_reported', 'drought_news_article', 'drought_desinventar']
     feature_list = list(Uganda_data.drop(labels=['Country', 'District',
@@ -37,7 +36,7 @@ def prepare_Uganda_data(phath='./datasets/',
                                                  'date', ] + label_list,
                                          axis=1).columns)
 
-    raw_features_noSPEI = Uganda_data[['District', 'year', 'month'] + feature_list[0:18] + [feature_list[-1]]].copy()
+    raw_features_noSPEI = Uganda_data[['District', 'year', 'month'] + feature_list[0:18]].copy()
     raw_features_noSPEI = raw_features_noSPEI[
         raw_features_noSPEI.month.apply(lambda x: x in (first_planting + second_planting))]
     raw_features_noSPEI['Season'] = raw_features_noSPEI['month'].apply(
@@ -48,7 +47,8 @@ def prepare_Uganda_data(phath='./datasets/',
     normal_features = normalize_data(features_noSPEI, ids_list=['year', 'District', 'Season'],
                                      grouping=['District', 'Season'])
 
-    spei_col = 'SPEI_3month'
+    spei_lag = np.min([len(first_planting), len(second_planting)])
+    spei_col = 'SPEI_' + str(spei_lag) + 'month'
     spei = Uganda_data[['year', 'District', 'month'] + [spei_col]].copy()
     spei = spei[spei['month'].apply(lambda x: x in ([first_planting[-1]] + [second_planting[-1]]))]
     spei['Season'] = spei['month'].apply(lambda x: first_id if x == first_planting[-1] else second_id)
@@ -60,13 +60,12 @@ def prepare_Uganda_data(phath='./datasets/',
     normal_features = normal_features[['year', 'District', 'Season'] + new_feature_list]
     normal_features.sort_values(by=['year', 'District', 'Season'], inplace=True)
 
-    label_col = 'drought_reported'
     labels = Uganda_data[['District', 'year', 'month'] + [label_col]].copy()
     labels = labels[labels.month.apply(lambda x: x in (first_harvest + second_harvest))]
     labels['Season'] = labels['month'].apply(lambda x: first_id if x in first_harvest else second_id)
     labels.drop(labels='month', axis=1, inplace=True)
     sum_labels = labels.groupby(by=['year', 'District', 'Season']).sum().reset_index()
-    sum_labels.rename(columns={'drought_reported': 'number_drought_reported'}, inplace=True)
+    sum_labels.rename(columns={label_col: 'number_drought_reported'}, inplace=True)
     sum_labels[label_col] = sum_labels['number_drought_reported'] > 0
 
     normal_data = normal_features.merge(sum_labels, on=['year', 'District', 'Season'])
@@ -255,6 +254,45 @@ def visualize_droughts_uganda(data, model, year, season, selected_features,
                            figsize=(6, 6));
 
     return
+
+
+def fit_random_model(y, p=0.5):
+    Precision_Positive = []
+    Precision_Negative = []
+    Recall_Positive = []
+    Recall_Negative = []
+    F_score_Positive = []
+    F_score_Negative = []
+
+    for n in range(1000):
+        scores = np.random.rand(len(y)) < p
+        metrics = sklm.precision_recall_fscore_support(y, scores, labels=[True, False])
+        Precision_Positive.append(metrics[0][0])
+        Precision_Negative.append(metrics[0][1])
+        Recall_Positive.append(metrics[1][0])
+        Recall_Negative.append(metrics[1][1])
+        F_score_Positive.append(metrics[2][0])
+        F_score_Negative.append(metrics[2][1])
+
+    metric_data = pd.DataFrame()
+    metric_data['Precision_Positive'] = Precision_Positive
+    metric_data['Precision_Negative'] = Precision_Negative
+    metric_data['Recall_Positive'] = Recall_Positive
+    metric_data['Recall_Negative'] = Recall_Negative
+    metric_data['F_score_Positive'] = F_score_Positive
+    metric_data['F_score_Negative'] = F_score_Negative
+
+    metric_mean = metric_data.mean().round(2)
+    metric_std = metric_data.std().round(2)
+
+    cols = ['Precision', 'Recall', 'F_score']
+    print('           Positive      Negative')
+    for col in cols:
+        sapace = ' ' * (9 - len(col))
+        print(col + sapace + '  %6.2f' % metric_mean[col + '_Positive'] + '        %6.2f' % metric_mean[
+            col + '_Negative'])
+
+    return metric_mean, metric_std
 
 '''
 Helper Functions 
