@@ -256,6 +256,122 @@ def visualize_droughts_uganda(data, model, year, season, selected_features,
     return
 
 
+def make_monitor_model(training_data, selected_features, label_name, C):
+    reduced_data = reduce_data(training_data, label_name)
+
+    X = reduced_data[selected_features]
+
+    y = reduced_data[label_name]
+
+    n_pos = len(y[y == True])
+    n_neg = len(y[y == False])
+
+    W_neg = (1.0 / n_neg) / (1.0 / n_pos + 1.0 / n_neg)
+    W_pos = (1.0 / n_pos) / (1.0 / n_pos + 1.0 / n_neg)
+
+    Weights = {True: W_pos, False: W_neg}
+
+    monitor_model = LogisticRegression(C=C,
+                                       class_weight=Weights,
+                                       penalty='l1',
+                                       fit_intercept=True,
+                                       solver='liblinear',
+                                       random_state=0)
+
+    monitor_model.fit(X, y);
+
+    return monitor_model
+
+
+def prepare_monitor_data(data, monitor_features, monitor_model,
+                         date_col='date', district_col='District',
+                         label_col=None):
+    data[date_col] = pd.to_datetime(data[date_col],
+                                    infer_datetime_format=True)
+    raw_data = data.copy()
+    raw_data = raw_data[[date_col, district_col] + monitor_features]
+
+    averaged_data = pd.DataFrame()
+    groups = raw_data.groupby(district_col)
+    for name, group in groups:
+        sorted_group = group[[date_col] + monitor_features].sort_values('date').reset_index(drop=True)
+        averaged_group = sorted_group[monitor_features].rolling(window=3).mean()
+        averaged_group[date_col] = sorted_group[date_col]
+        averaged_group[district_col] = name
+        averaged_group = averaged_group[[district_col] + [date_col] + monitor_features]
+        averaged_group.dropna(inplace=True)
+        averaged_data = pd.concat([averaged_data, averaged_group], axis=0)
+
+    averaged_data.reset_index(inplace=True, drop=True)
+    averaged_data['month'] = averaged_data[date_col].dt.month
+    averaged_data['year'] = averaged_data[date_col].dt.year
+
+    normal_data = normalize_data(averaged_data,
+                                     ids_list=[district_col, 'year', 'month', date_col],
+                                     grouping=[district_col, 'month'])
+    normal_data.sort_values([district_col, date_col], inplace=True)
+    month_shift = 1
+    normal_data = normal_data[[district_col] + [date_col] + monitor_features]
+    normal_data['score'] = (normal_data[monitor_features].values.dot(
+        monitor_model.coef_.T)).ravel() + monitor_model.intercept_
+    normal_data['drought_predicted'] = normal_data['score'] > 0
+    normal_data[date_col] = normal_data[date_col] + pd.DateOffset(months=month_shift)
+    if label_col is not None:
+        normal_data = normal_data.merge(data[[date_col,district_col, label_col]],
+                                        on=[date_col,district_col])
+    return normal_data
+
+
+def monitor_plot(monitor_data, montor_date, district_col='District',date_col='date',
+                 label_col=None, path_to_shapefile='../'):
+
+    month = montor_date.month
+
+    year = montor_date.year
+
+    select_date = date(year, month, 1).strftime("%Y-%m-%d")
+
+    part_data = monitor_data[monitor_data[date_col] == select_date].copy()
+
+    if part_data.empty:
+        print('Data is not available.')
+        return
+
+    gdf_country = gpd.read_file(get_country_shapefile(path=path_to_shapefile,
+                                                      country='Uganda',
+                                                      admin_level=1), crs='')
+
+    gdf_country.rename(columns={'ADM1_EN': district_col}, inplace=True)
+    gdf_country_points = gdf_country.copy()
+    gdf_country_points['geometry'] = gdf_country_points.centroid
+
+    temp_1 = gdf_country[[district_col, 'geometry']].merge(part_data[[district_col,
+                                                                      'score']],
+                                                           on=district_col)
+    temp_2 = pd.DataFrame()
+
+    if label_col is not None:
+        temp_2 = gdf_country_points[[district_col, 'geometry']].merge(part_data[[district_col,
+                                                                                 label_col]],
+                                                                      on=district_col)
+        temp_2 = temp_2[temp_2[label_col]]
+
+    norm = colors.Normalize(vmin=-0.6, vmax=0.6)
+
+    if not temp_2.empty:
+        temp_2.plot(marker='*', color='white', markersize=200,
+                    edgecolor="black", figsize=(6, 6))
+        ax = plt.gca()
+        geoplot.choropleth(temp_1, hue=temp_1['score'],
+                           cmap='jet', norm=norm, legend=True, ax=ax, zorder=0);
+    else:
+        geoplot.choropleth(temp_1, hue=temp_1['score'],
+                           cmap='jet', norm=norm, legend=True, zorder=0,
+                           figsize=(6, 6));
+    plt.title(select_date);
+
+    return
+
 def fit_random_model(y, p=0.5):
     Precision_Positive = []
     Precision_Negative = []
@@ -293,6 +409,7 @@ def fit_random_model(y, p=0.5):
             col + '_Negative'])
 
     return metric_mean, metric_std
+
 
 '''
 Helper Functions 
