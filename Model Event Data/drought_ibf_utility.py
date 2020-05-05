@@ -11,6 +11,8 @@ import geopandas as gpd
 import geoplot
 import matplotlib.colors as colors
 
+
+
 '''
 Main Functions
 '''
@@ -23,14 +25,14 @@ def prepare_Uganda_data(phath='./datasets/',
                         second_harvest=[11, 12],
                         first_planting=[3, 4, 5],
                         second_planting=[8, 9, 10],
-                        label_col='drought_reported'):
+                        label_col='drought reported'):
     full_data = pd.read_csv(phath + filename, index_col=False)
     Uganda_data = full_data[full_data.Country == 'Uganda'].copy()
 
     first_id = '_'.join(str(x) for x in first_harvest)
     second_id = '_'.join(str(x) for x in second_harvest)
 
-    label_list = ['drought_reported', 'drought_news_article', 'drought_desinventar']
+    label_list = ['drought reported', 'drought news article', 'drought desinventar']
     feature_list = list(Uganda_data.drop(labels=['Country', 'District',
                                                  'year', 'month', 'day',
                                                  'date', ] + label_list,
@@ -48,7 +50,7 @@ def prepare_Uganda_data(phath='./datasets/',
                                      grouping=['District', 'Season'])
 
     spei_lag = np.min([len(first_planting), len(second_planting)])
-    spei_col = 'SPEI_' + str(spei_lag) + 'month'
+    spei_col = 'SPEI ' + str(spei_lag) + 'month'
     spei = Uganda_data[['year', 'District', 'month'] + [spei_col]].copy()
     spei = spei[spei['month'].apply(lambda x: x in ([first_planting[-1]] + [second_planting[-1]]))]
     spei['Season'] = spei['month'].apply(lambda x: first_id if x == first_planting[-1] else second_id)
