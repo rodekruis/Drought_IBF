@@ -143,6 +143,7 @@ def predict_Logreg_model(model, X, y, C, confusion_matrix=True):
     coefs.sort_values('abs_coef', ascending=False, inplace=True, axis=0)
     coefs = coefs[['feature', 'coef']]
     coefs = coefs[coefs.coef.abs()>0]
+    coefs.rename(columns={'coef':'coefficients'},inplace=True)
 
     predictions = pd.DataFrame()
     predictions[label_name] = y
@@ -200,6 +201,7 @@ def plot_dist(data,target,drought_var):
 
 def visualize_droughts_uganda(data, model, year, season, selected_features,
                               label_name, path_to_shapefile='../'):
+
     drought_count = data[['year', 'Season', label_name]].groupby(['year', 'Season']).sum().rename(
         columns={label_name: 'drought_count'}).reset_index()
     drought_count['date'] = drought_count.apply(lambda x: date(x.year,
