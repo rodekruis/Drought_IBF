@@ -308,12 +308,12 @@ def prepare_monitor_data(data, monitor_features, monitor_model,
     return normal_data
 
 
-def monitor_plot(monitor_data, montor_date, district_col='District',date_col='date',
+def monitor_plot(monitor_data, monitor_date, district_col='District',date_col='date',
                  label_col=None, path_to_shapefile='../'):
 
-    month = montor_date.month
+    month = monitor_date.month
 
-    year = montor_date.year
+    year = monitor_date.year
 
     select_date = date(year, month, 1).strftime("%Y-%m-%d")
 
@@ -354,7 +354,8 @@ def monitor_plot(monitor_data, montor_date, district_col='District',date_col='da
         geoplot.choropleth(temp_1, hue=temp_1['score'],
                            cmap='jet', norm=norm, legend=True, zorder=0,
                            figsize=(6, 6));
-    plt.title(select_date);
+
+    plt.title(monitor_date.strftime("%B %Y"));
 
     return
 

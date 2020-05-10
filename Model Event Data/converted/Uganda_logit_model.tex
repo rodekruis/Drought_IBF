@@ -481,8 +481,8 @@ occurrence of droughts in Uganda based of meteorological data. The
 precipitation and the \textbf{E}nhanced \textbf{V}egitation
 \textbf{I}ndex (EVI) turn out to be the most important drought
 predictors among all the meteorological quantities that we studied,
-implying the drought report are triggered by both the hydrological and
-agricultural factors. The model is able to capture 70 percent of the
+implying that the drought reports are triggered by both the hydrological
+and agricultural factors. The model is able to capture 70 percent of the
 reported droughts in our historical data. Based on our model, we derive
 a ``drought score'' which would serve as a potentially useful metric to
 monitor and predict droughts in Uganda.
@@ -490,11 +490,10 @@ monitor and predict droughts in Uganda.
 \hypertarget{data-collection}{%
 \section{Data collection}\label{data-collection}}
 
-We are going to construct a model to predict the occurrence of the
-drought in Uganda, using satellite meteorological satellite data.
-
-The meteorological parameters that serves as drought indicators, and to
-which we refer as \textbf{features}, are collected using the
+Our aim is to construct a model to predict the occurrence of droughts in
+Uganda, using meteorological satellite data. The meteorological
+parameters that serve as drought indicators, and to which we refer as
+\textbf{features}, are collected using the
 \href{https://developers.google.com/earth-engine/python_install}{Google
 Earth engine} by this
 \href{https://github.com/rodekruis/Drought_IBF/blob/master/GoogleEarthEngine/GEE_get_data.py}{python
@@ -521,14 +520,12 @@ script}, and are listed bellow
   `\texttt{precipitation\ per\ hour\ v2}'.
 \item
   \href{https://developers.google.com/earth-engine/datasets/catalog/MODIS_006_MOD11A1}{\textbf{LST\_Day\_1km:}}
-  Land surface temperature during daytime in 50 Kelvins (multiply number
-  by 0.02 to get Kelvins). Name in our dataset:
-  `\texttt{surface\ temperature\ daytime}'.
+  Land surface temperature during daytime in 50 Kelvins. Name in our
+  dataset: `\texttt{surface\ temperature\ daytime}'.
 \item
   \href{https://developers.google.com/earth-engine/datasets/catalog/MODIS_006_MOD11A1}{\textbf{LST\_Night\_1km:}}
-  Land surface temperature during daytime in 50 Kelvins (multiply number
-  by 0.02 to get Kelvins). Name in our dataset:
-  `\texttt{surface\ temperature\ nighttime}'.
+  Land surface temperature during daytime in 50 Kelvins. Name in our
+  dataset: `\texttt{surface\ temperature\ nighttime}'.
 \item
   \href{https://developers.google.com/earth-engine/datasets/catalog/NASA_FLDAS_NOAH01_C_GL_M_V001}{\textbf{Evap\_tavg:}}
   Evapotranspiration measured in kg m\^{}\{-2\} s\^{}\{-1\}. Name in our
@@ -543,15 +540,15 @@ script}, and are listed bellow
   dataset: `\texttt{SoilMoisture00\ 10cm}'.
 \item
   \href{https://developers.google.com/earth-engine/datasets/catalog/NASA_FLDAS_NOAH01_C_GL_M_V001}{\textbf{SoilMoi10\_40cm\_tavg:}}
-  Soil moisture (0 - 10 cm underground) in m\^{}3 m-3. Name in our
+  Soil moisture (10 - 40 cm underground) in m\^{}3 m-3. Name in our
   dataset: `\texttt{SoilMoisture10\ 40cm}'.
 \item
   \href{https://developers.google.com/earth-engine/datasets/catalog/NASA_FLDAS_NOAH01_C_GL_M_V001}{\textbf{SoilMoi40\_100cm\_tavg:}}
-  Soil moisture (0 - 10 cm underground) in m\^{}3 m-3. Name in our
+  Soil moisture (40 - 100 cm underground) in m\^{}3 m-3. Name in our
   dataset: `\texttt{SoilMoisture40\ 100cm}'.
 \item
   \href{https://developers.google.com/earth-engine/datasets/catalog/NASA_FLDAS_NOAH01_C_GL_M_V001}{\textbf{SoilMoi100\_200cm\_tavg:}}
-  Soil moisture (0 - 10 cm underground) in m\^{}3 m-3. Name in our
+  Soil moisture (100 - 200 cm underground) in m\^{}3 m-3. Name in our
   dataset: `\texttt{SoilMoisture100\ 200cm}'.
 \item
   \href{https://developers.google.com/earth-engine/datasets/catalog/NASA_FLDAS_NOAH01_C_GL_M_V001}{\textbf{SoilTemp00\_10cm\_tavg:}}
@@ -596,15 +593,15 @@ either averaged or summed in successive one-month intervals (see the
 script} for details).
 
 The target variable that we are trying to predict, to which we refer to
-as \textbf{labels}, is the occurrence of droughts at a certain time
+as the \textbf{label}, is the occurrence of droughts at a certain time
 point/period in a particular district. This would be a binary
 (i.e.~Boolean) variable, taking the value `True' when a drought has
-occurred, and `False' when no drought is reported. The data comes from
-two different sources: the Red Cross desinventar and news articles, both
-can be found
+occurred, and `False' when no drought is reported. This information
+comes from two different sources, the Red Cross desinventar and news
+articles, both can be found
 \href{https://rodekruis.sharepoint.com/sites/510-CRAVK-510/Gedeelde\%20\%20documenten/Forms/AllItems.aspx?RootFolder=\%2Fsites\%2F510\%2DCRAVK\%2D510\%2FGedeelde\%20\%20documenten\%2F\%5BCTRY\%5D\%20Uganda\%2F2\%2D\%20IBF\%20DROUGHT\%20UGANDA\%2FDROUGHT\%20EVENTS\%20\%26\%20IMPACT\%20ANALYSIS\&FolderCTID=0x012000D122CA8FA5B68345A13A32EDAA653915}{here}.
-We chose to combine the two sources together to build the label
-variable. This is represented by the column `\texttt{drought\ reported}'
+We chose to build the label variable by combining the two sources
+together. This is represented by the column `\texttt{drought\ reported}'
 in the dataset.
 
 We merged all the features and labels into a single dataset using this
@@ -619,20 +616,20 @@ district.
 
 We consider the bimodal
 \href{https://fews.net/east-africa/uganda}{agricultural calendar for
-Uganda} of Uganda as shown in Figure \ref{fig:calendar} which has two
-harvest seasons per year: the first one during June and July, and the
-second one in November and December.
+Uganda} (Figure \ref{fig:calendar}, top panel) which has two harvest
+seasons per year: the first one during June and July, and the second one
+in November and December.
 
 \begin{figure}[]
 \hypertarget{fig:calendar}{%
 \begin{center}
-\adjustimage{max size={0.9\linewidth}{0.9\paperheight},}{./seasonal-calendar-uganda.png}
+\adjustimage{max size={0.9\linewidth}{0.9\paperheight},width=1.0\linewidth}{./pictures/seasonal-calendar-uganda.png}
 \end{center}
 \caption{agricultural calendar for Uganda}\label{fig:calendar}
 }
 \end{figure}
 
-We set as our goal to predict weather a drought occurs or not within
+We set as our goal to predict whether or not a drought occurs within
 each harvest season, based on the meteorological data in the three-month
 period preceding the season. To this end we redefine the label variable
 to have the value \texttt{True} if a drought is reported in any of the
@@ -667,25 +664,27 @@ actually happened but remained unreported.
 features}\label{correlations-among-the-features}}
 
 Many of the features in our dataset are strongly correlated. To
-investigate this, we used a biclustering algorithm to divide the
-features into three separate groups. Features within a group correlate
-strongly with each other, while the correlation between features from
-different groups is weaker. Figure \ref{corr_mat} Shows the resultant
-correlation matrix, where the heatmap represents the absolute value of
-the correlation. We can see that the soil moisture and soil temperature
-features all correlate strongly with each other, as expected. Vegetation
-indices EVI and NDVI correlate well with each other, with air and
-surface temperatures, and with the soil temperature (but not with the
-soil moisture). Surprisingly the feature related to precipitation,
-namely `\texttt{rainfall}', `\texttt{precipitation\_per\_hour\_v1}' and
+investigate this, we used a
+\href{https://scikit-learn.org/stable/modules/biclustering.html}{biclustering
+algorithm} to divide the features into three separate groups. Features
+within a group correlate strongly with each other, while the correlation
+between features from different groups is weaker. Figure \ref{corr_mat}
+Shows the resultant correlation matrix, where the colors represent the
+absolute value of the correlation coefficient. We can see that the soil
+moisture and soil temperature features all correlate strongly with each
+other, as expected. Vegetation indices EVI and NDVI correlate well with
+each other, with air and surface temperatures, and with the soil
+temperature (but not with the soil moisture). Surprisingly the features
+related to precipitation, namely `\texttt{rainfall}',
+`\texttt{precipitation\_per\_hour\_v1}' and
 `\texttt{precipitation\_per\_hour\_v2}', do not correlate well with each
 other. The reason for this is not clear for us.
 
-\begin{figure}[H]\begin{center}\adjustimage{max size={0.9\linewidth}{0.9\paperheight},height=0.4\paperheight}{Uganda_logit_model_files/output_15_0.png}\end{center}\caption{Correlations matrix for all pairs of features. The heatmap represents
-the absolute value of the correlation.}\label{corr_mat}\end{figure}
+\begin{figure}[H]\begin{center}\adjustimage{max size={0.9\linewidth}{0.9\paperheight},height=0.4\paperheight}{Uganda_logit_model_files/output_15_0.png}\end{center}\caption{Correlations matrix for all pairs of features. The colors represent the
+absolute value of the correlation coefficient.}\label{corr_mat}\end{figure}
 
-The correlation plots among features within each of the three groups are
-shown in Figures \ref{pairplot1} to \ref{pairplot3}.
+The correlation plots among the features within each of the three groups
+are shown in Figures \ref{pairplot1} to \ref{pairplot3}.
 
 \begin{figure}[H]\begin{center}\adjustimage{max size={0.9\linewidth}{0.9\paperheight},height=0.55\paperheight}{Uganda_logit_model_files/output_17_0.png}\end{center}\caption{Correlation plots for the features in group 1. The points are colored
 based on their label values.}\label{pairplot1}\end{figure}
@@ -807,20 +806,20 @@ regression classifier} with
 \href{https://scikit-learn.org/stable/auto_examples/linear_model/plot_logistic_l1_l2_sparsity.html}{\(l_1\)
 penalty} to predict the occurrence of droughts in Uganda. Our goal is to
 separate the rows of the dataset into two classes: a positive class
-which represents a drought being reported
-(\texttt{\textquotesingle{}drought\ reported\textquotesingle{}\ =\ True}),
-and a negative class where no drought report exists in the Red Cross
-desinventar or in the news articles. It is important to note that the
-population of the positive class \(n^{pos}= 65\) in our training data is
-about 5 times smaller the population of the negative class
-\(n^{neg}= 297\). The negative class is therefore largely
-overrepresented, and a model trained on such data will be biased towards
-predicting the negative class correctly, without caring so much about
-capturing the positive class. Since having a good predicting power for
-the positive class is equally important for us, we need to correct for
-this imbalance in the class populations. We do this by assigning unequal
-weights \(W^{pos}\) and \(W^{neg}\) to the positive and the negative
-classes, which are inversely proportional to the class populations:
+which represents the occurrence of a drought,
+(\texttt{drought\ =\ True}), and a negative class where the model
+predicts that no drought will occur (\texttt{drought\ =\ False}). It is
+important to note that the population of the positive class
+\(n^{pos}= 65\) in our training data is about 5 times smaller the
+population of the negative class \(n^{neg}= 297\). The negative class is
+therefore largely overrepresented, and a model trained on such data will
+be biased towards predicting the negative class correctly, without
+caring so much about capturing the positive class. Since having a good
+predicting power for the positive class is equally important for us, we
+need to correct for this imbalance in the class populations. We do this
+by assigning unequal weights \(W^{pos}\) and \(W^{neg}\) to the positive
+and the negative classes, which are inversely proportional to the class
+populations:
 
 \begin{equation}\label{eqn_wpos}
 W^{pos}=\frac{\frac{1}{n^{pos}}}{\frac{1}{n^{pos}}+\frac{1}{n^{neg}}},
@@ -837,14 +836,14 @@ both classes are represented equally when the model is trained on the
 data.
 
 The \(l_1\) penalty in the logistic regression model is associated with
-the regularization parameter \(C\) which tunes the model complexity, by
-controlling the number of features which are included in the model. In
+a regularization parameter \(C\), which tunes the model complexity by
+controlling the number of features that are included in the model. In
 the framework of logistic regression, the contribution of each feature
 is determined by a coefficient, and a zero coefficient means that the
 corresponding feature does not enter the model. The regularization
-parameter controls how many of the coefficients are different from zero.
-Figure \ref{fig_l1} shows the model coefficients for all features as a
-function of the regularization parameter \(C\). We can see that for
+parameter determines how many of these coefficients are different from
+zero. Figure \ref{fig_l1} shows the model coefficients for all features
+as a function of the regularization parameter \(C\). We can see that for
 large values of \(C\) all coefficients are non-zero. As \(C\) decreases,
 the coefficients gradually shrink to zero.
 
@@ -881,17 +880,17 @@ dark black. The training average F1 score is also shown in the Figure
 \begin{figure}[H]\begin{center}\adjustimage{max size={0.9\linewidth}{0.9\paperheight},height=0.22\paperheight}{Uganda_logit_model_files/output_55_0.png}\end{center}\caption{Average F1 score as a function of the regularization parameter \(C\).
 The curves in pail colors show the cross-validation average F1 scores
 after randomly shuffling the data, and their mean is shown in dark
-black. The dashed-dot curve correspond to the average F1 score for the
-training data. The blue and red vertical dashed lines indicate
+black. The dashed-dot curve (green) corresponds to the average F1 score
+for the training data. The blue and red vertical dashed lines indicate
 \(C=0.09\) and \(C=0.23\) respectively.}\label{fig_cv}\end{figure}
 
 Looking at the dark black curve in Figure \ref{fig_cv}, it is clear that
 for \(C<0.09\) (blue vertical dashed line) the cross-validation F1 score
 rapidly grows by increasing \(C\). For values between 0.09 and 0.23 (red
 vertical dashed line), the cross-validation average F1 score remains
-relatively constant around 0.42, the same as the training average F1
-score (see dashed-dot curve, green). For \(C>0.23\), although the
-training score continues to grow and saturates at 0.57, the
+relatively constant around 0.42, and the same happens for the training
+average F1 score (see dashed-dot curve, green). For \(C>0.23\), although
+the training score continues to grow and saturates at 0.57, the
 cross-validation score always remain below the training scores and
 quickly saturates at 0.48 after a mild increase. This implies that for
 values of \(C>0.23\) the model stops to nicely generalize to new data.
@@ -926,25 +925,25 @@ the model coefficients for \(C=0.3\) which are listed in Table
 makes sense, as the precipitation should anticorrelate with droughts.
 However, the positive coefficient for soil moisture and the negative
 coefficient for air temperature do not make sense intuitively,
-indicating that model is fine-tuning itself to the training data. We
-find that we get more and more of such nonsensical coefficients and we
+indicating that the model is fine-tuning itself to the training data. We
+find that we get more and more of such nonsensical coefficients as we
 increase \(C\) further. Since we inferred from Figure \ref{fig_cv} that
 the model tends to overfit for \(C>0.23\), and the data in Table
 \ref{tab_overfit} confirms that the overfitting already happens for
-values as small as 0.3, In the rest of this analysis we used the optimal
+values as small as 0.3, In the rest of this analysis we use the optimal
 value of \(C=0.23\) for the regularization parameter.
 
 \hypertarget{model-evaluation}{%
 \section{Model evaluation}\label{model-evaluation}}
 
 A logistic regression model produces a score as a linear combination of
-the features, where the contribution of each feature is given by its
-associated coefficient. Table \ref{tab_coefs} lists the nonzero
+the features, where the contribution of each feature is determined by
+its associated coefficient. Table \ref{tab_coefs} lists the nonzero
 coefficients for our optimal drought model with \(C=0.23\).
 Interestingly, only two features,
 `\texttt{precipitation\ per\ hour\ v2}' and `\texttt{EVI}', enter the
-optimal model, implying the drought report are triggered by both the
-hydrological and agricultural factors. According to Table
+optimal model, implying that the drought reports are triggered by both
+the hydrological and agricultural factors. According to Table
 \ref{tab_coefs}, the score produced by our optimal drought model can
 therefore be written as
 
@@ -970,18 +969,18 @@ EVI                       &         -0.23 \\
 \end{table}
 
 Note that, as mentioned earlier, in equation \ref{eqn_score} both
-feature are normalized per district and per season. The score can be
+features are normalized per district and per season. The score can be
 positive or negative, and is a measure for the likelihood of droughts.
 The more positive the score is, the higher is the chance that a drought
-occurs. Figure \ref{fig_score} shows the distribution of the score
-separately for `\texttt{drought\ reported\ =False}' (blue) and
+occurs. Figure \ref{fig_score} shows the distribution of this ``drought
+score'' separately for `\texttt{drought\ reported\ =False}' (blue) and
 `\texttt{drought\ reported\ =\ True}' (orange), confirming that the
-model score correlates with the target
+score correlates with the target.
 
-\begin{figure}[H]\begin{center}\adjustimage{max size={0.9\linewidth}{0.9\paperheight},height=0.17\paperheight}{Uganda_logit_model_files/output_65_0.png}\end{center}\caption{Distribution of model scores separated by the label values.}\label{fig_score}\end{figure}
+\begin{figure}[H]\begin{center}\adjustimage{max size={0.9\linewidth}{0.9\paperheight},height=0.17\paperheight}{Uganda_logit_model_files/output_65_0.png}\end{center}\caption{Distribution of the drought score separated by the label values.}\label{fig_score}\end{figure}
 
 The \href{https://en.wikipedia.org/wiki/Confusion_matrix}{confusion
-matrix} and accuracy associated with the optimal model, as well as
+matrix} and the accuracy associated with the optimal model, as well as
 \href{https://en.wikipedia.org/wiki/Precision_and_recall}{precision,
 recall} and the F1 scores for positive and negative classes, are given
 in Text \ref{tab_confusion}. The model reaches the overall accuracy of
@@ -992,7 +991,7 @@ rather low: about \%25. This is partially due to the overrepresentation
 of the negative class, which leads to many false positives, and lowers
 the precision for the positive class as well as the recall for the
 negative class. We note however that there is a rather high chance that
-an actual drought in Uganda remain unreported. We therefore expect that
+an actual drought in Uganda remains unreported. We therefore expect that
 the number of false positives presented in Text \ref{tab_confusion} is
 an overestimation. The actual predictive power of the model can only be
 assessed after testing it in the field.
@@ -1023,7 +1022,7 @@ To have a baseline with which we can compare the performance of our
 model, we consider a ``random model'' which classifies the data by
 ``coin flipping'': irrespective to the features values, the model
 assigns \texttt{True} and \texttt{False} labels to the data points with
-equal probability. Text \ref{tab_random} lists the fit quality metric
+equal probability. Text \ref{tab_random} lists the fit quality metrics
 for such a random model (averaged over 100 runs). We see that our model
 clearly outperforms the random model in every aspect, especially in the
 case of the positive class.
@@ -1099,9 +1098,9 @@ One notable exception is the period of June-July 2013 where the model
 fails drastically (see Figure \ref{fig_map2013a}): it produces a low
 score anywhere within the country while seven droughts has bin reported.
 In an attempt to rationalize this, we slightly modified the drought
-score: Instead of considering the three-month period preceding June
+score: instead of considering the three-month period preceding June
 2013, we calculated the score over the period of May to June 2013. As
-Figure \ref{fig_map2013b} shows this modification improves the model
+Figure \ref{fig_map2013b} shows, this modification improves the model
 performance in this particular instance. We therefore suggest that the
 failure of the model might be due to an unusually rapid change in the
 meteorological factors.
@@ -1127,7 +1126,7 @@ with a period of three months, normalizing them per month and district
 as described in section \ref{data-collection}, and calculating the
 drought score using equation \ref{eqn_score}.
 
-\begin{figure}[H]\begin{center}\adjustimage{max size={0.9\linewidth}{0.9\paperheight},height=0.2\paperheight}{Uganda_logit_model_files/output_88_0.png}\end{center}\caption{Number of drought in Uganda during each month between 2000 and 2019.
+\begin{figure}[H]\begin{center}\adjustimage{max size={0.9\linewidth}{0.9\paperheight},height=0.2\paperheight}{Uganda_logit_model_files/output_88_0.png}\end{center}\caption{Number of droughts in Uganda during each month between 2000 and 2019.
 Orange curve: number of reported droughts. Blue cure: predicted number
 of droughts by thresholding the draught score at zero. Some instances of
 successful performance of the model are highlighted in blue.}\label{fig_droughtcount}\end{figure}
@@ -1137,7 +1136,7 @@ droughts in Uganda (orange curve), for every month between 2000 and
 2019, compared with our model prediction (blue curve) obtained by
 thresholding the score at zero (i.e.~positive score: drought occurs;
 negative score: drought does not occur). As expected from the large
-number of false positives in Text \ref{tab_confusion}, the model
+number of false positives in Text \ref{tab_confusion}, our model
 generally overestimates the number of droughts. Notably, however, there
 are distinct time points where the model predicts a ``global drought''
 in Uganda, where 100 or more districts out of the 120 districts of
@@ -1150,29 +1149,39 @@ drought score, if implemented in a drought monitoring tool, can serve as
 an warning for extensive droughts in Uganda. A crude example of such a
 monitoring system is implemented in the end of this
 \href{https://github.com/rodekruis/Drought_IBF/blob/master/Model\%20Event\%20Data/Uganda_logit_model.ipynb}{Jupyter
-notebook} (see Figure \ref{fig_monitor}), where users can explore the
-distribution of the drought score at any date they chose, along with any
-reported drought if exists.
+notebook} (see Figures \ref{fig_monitor} and \ref{fig_monitor_2}), where
+users can explore the distribution of the drought score at any date they
+chose, along with any reported drought if exists.
 
 \begin{figure}[H]
 \hypertarget{fig_monitor}{%
 \begin{center}
-\adjustimage{max size={0.9\linewidth}{0.9\paperheight},width=0.6\linewidth}{./drought_monitor_date.png}
+\adjustimage{max size={0.9\linewidth}{0.9\paperheight},width=0.6\linewidth}{./pictures/drought_monitor_date.png}
 \end{center}
 \caption{A crude example of a simple drought monitor with a date picker.}\label{fig_monitor}
+}
+\end{figure}
+
+\begin{figure}[H]
+\hypertarget{fig_monitor_2}{%
+\begin{center}
+\adjustimage{max size={0.9\linewidth}{0.9\paperheight},width=0.6\linewidth}{./pictures/drought_monitor_slider.png}
+\end{center}
+\caption{Another example of a drought monitor with a date slider.}\label{fig_monitor_2}
 }
 \end{figure}
 
 \hypertarget{resources}{%
 \section{Resources}\label{resources}}
 
-This report has been generated from this
+This report has been generated from a
 \href{https://github.com/rodekruis/Drought_IBF/blob/master/Model\%20Event\%20Data/Uganda_logit_model.ipynb}{Jupyter
 notebook}. All the associated
 \href{https://github.com/rodekruis/Drought_IBF/tree/master/Model\%20Event\%20Data/datasets}{datasets},
 \href{https://github.com/rodekruis/Drought_IBF/blob/master/Model\%20Event\%20Data/drought_ibf_utility.py}{python
-scrips} and the \href{}{\LaTeX source file} of this report can be
-accessed via the
+scrips} and the
+\href{https://github.com/rodekruis/Drought_IBF/blob/master/Model\%20Event\%20Data/converted/Uganda_logit_model.tex}{\LaTeX source
+file} of this report can be accessed via the
 \href{https://github.com/rodekruis/Drought_IBF/tree/master/Model\%20Event\%20Data}{Rodekruis
 GitHub}.
 
