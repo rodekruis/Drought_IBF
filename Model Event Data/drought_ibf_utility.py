@@ -200,7 +200,7 @@ def plot_dist(data,target,drought_var):
 
 
 def visualize_droughts_uganda(data, model, year, season, selected_features,
-                              label_name, path_to_shapefile='../'):
+                              label_name, path_to_shapefile='../', cmap='jet'):
 
     gdf_country = gpd.read_file(get_country_shapefile(path=path_to_shapefile,
                                                       country='Uganda',
@@ -228,10 +228,10 @@ def visualize_droughts_uganda(data, model, year, season, selected_features,
                     edgecolor="black", figsize=(6, 6))
         ax = plt.gca()
         geoplot.choropleth(temp_1, hue=temp_1['score'],
-                           cmap='jet', norm=norm, legend=True, ax=ax, zorder=0);
+                           cmap=cmap, norm=norm, legend=True, ax=ax, zorder=0);
     else:
         geoplot.choropleth(temp_1, hue=temp_1['score'],
-                           cmap='jet', norm=norm, legend=True, zorder=0,
+                           cmap=cmap, norm=norm, legend=True, zorder=0,
                            figsize=(6, 6));
     if season == '6_7':
         title = 'June-July ' + str(year)
@@ -309,7 +309,7 @@ def prepare_monitor_data(data, monitor_features, monitor_model,
 
 
 def monitor_plot(monitor_data, monitor_date, district_col='District',date_col='date',
-                 label_col=None, path_to_shapefile='../'):
+                 label_col=None, path_to_shapefile='../',cmap='jet'):
 
     month = monitor_date.month
 
@@ -349,10 +349,10 @@ def monitor_plot(monitor_data, monitor_date, district_col='District',date_col='d
                     edgecolor="black", figsize=(6, 6))
         ax = plt.gca()
         geoplot.choropleth(temp_1, hue=temp_1['score'],
-                           cmap='jet', norm=norm, legend=True, ax=ax, zorder=0);
+                           cmap=cmap, norm=norm, legend=True, ax=ax, zorder=0);
     else:
         geoplot.choropleth(temp_1, hue=temp_1['score'],
-                           cmap='jet', norm=norm, legend=True, zorder=0,
+                           cmap=cmap, norm=norm, legend=True, zorder=0,
                            figsize=(6, 6));
 
     plt.title(monitor_date.strftime("%B %Y"));
